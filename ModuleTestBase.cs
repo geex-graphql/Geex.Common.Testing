@@ -17,8 +17,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mongo2Go;
+
 using MongoDB.Bson;
 using MongoDB.Entities;
+
 using Moq;
 
 using Volo.Abp;
@@ -59,20 +61,20 @@ namespace Geex.Common.Testing
         protected override void AfterAddApplication(IServiceCollection services)
         {
             base.AfterAddApplication(services);
-            DB.MigrateAsync(this.GetType()).Wait();
+            DB.MigrateTargetAsync(this.GetType().Assembly.ExportedTypes.Where(x => x.IsAssignableTo<IMigration>()).ToArray()).Wait();
         }
 
         protected override void SetAbpApplicationCreationOptions(AbpApplicationCreationOptions options)
         {
             Fixture.Register<string>(() => ObjectId.GenerateNewId().ToString());
             options.UseAutofac();
-            Fixture.Register<IWebHostEnvironment>(() =>
-    new
-    {
-        ApplicationName = TestName,
-        EnvironmentName = "Testing"
-    }.ActLike<IWebHostEnvironment>());
-            options.Services.AddSingleton<IWebHostEnvironment>(Fixture.Create<IWebHostEnvironment>());
+            //        Fixture.Register<IWebHostEnvironment>(() =>
+            //new
+            //{
+            //    ApplicationName = TestName,
+            //    EnvironmentName = "Testing"
+            //}.ActLike<IWebHostEnvironment>());
+            //        options.Services.AddSingleton<IWebHostEnvironment>(Fixture.Create<IWebHostEnvironment>());
             options.Services.Replace(ServiceDescriptor.Singleton(new GeexCoreModuleOptions()
             {
                 AppName = TestName,

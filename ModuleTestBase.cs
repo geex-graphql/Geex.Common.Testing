@@ -64,6 +64,13 @@ namespace Geex.Common.Testing
             DB.MigrateTargetAsync(this.GetType().Assembly.ExportedTypes.Where(x => x.IsAssignableTo<IMigration>()).ToArray()).Wait();
         }
 
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+        public override void Dispose()
+        {
+            db.Result.Dispose();
+            base.Dispose();
+        }
+
         protected override void SetAbpApplicationCreationOptions(AbpApplicationCreationOptions options)
         {
             Fixture.Register<string>(() => ObjectId.GenerateNewId().ToString());

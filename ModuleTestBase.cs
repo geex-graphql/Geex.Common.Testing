@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using AutoFixture;
+using AutoFixture.AutoMoq;
 
 using Geex.Common.Abstraction;
 
@@ -23,6 +24,10 @@ using MongoDB.Entities;
 
 using Moq;
 
+using Redis2Go;
+
+using StackExchange.Redis.Extensions.Core.Configuration;
+
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
@@ -34,9 +39,11 @@ namespace Geex.Common.Testing
         where TStartupModule : IAbpModule
     {
         protected static Task<MongoDbRunner> db;
+        protected static Task<RedisRunner> redis;
         static ModuleTestBase()
         {
             db = Task.Run(() => MongoDbRunner.Start(singleNodeReplSet: true, singleNodeReplSetWaitTimeout: 5));
+            redis = RedisRunner.StartAsync(10000);
         }
         public string TestName = typeof(TStartupModule).Name + "Testing";
         public static IFixture Fixture { get; protected set; } = new Fixture();
@@ -47,14 +54,25 @@ namespace Geex.Common.Testing
 
         protected virtual async Task WithUow(Action action)
         {
-            var uow = GetRequiredService<IUnitOfWork>();
-            action.Invoke();
-            await uow.CommitAsync();
+            var func = new Func<Task>(() =>
+            {
+                action.Invoke();
+                return Task.CompletedTask;
+            });
+            await this.WithUow(func);
         }
         protected virtual async Task WithUow(Func<Task> action)
         {
             var uow = GetRequiredService<IUnitOfWork>();
-            await action.Invoke();
+            try
+            {
+                await action.Invoke();
+            }
+            catch (Exception e)
+            {
+                this.Dispose();
+                throw;
+            }
             await uow.CommitAsync();
         }
 
@@ -67,13 +85,21 @@ namespace Geex.Common.Testing
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public override void Dispose()
         {
-            db.Result.Dispose();
-            base.Dispose();
+            redis.Result?.Dispose();
+            db.Result?.Dispose();
+            this.Application?.Shutdown();
+            this.TestServiceScope?.Dispose();
+            this.Application?.Dispose();
         }
 
         protected override void SetAbpApplicationCreationOptions(AbpApplicationCreationOptions options)
         {
             Fixture.Register<string>(() => ObjectId.GenerateNewId().ToString());
+            Fixture.Customize(new AutoMoqCustomization()
+            {
+                ConfigureMembers = true,
+                GenerateDelegates = true
+            });
             options.UseAutofac();
             //        Fixture.Register<IWebHostEnvironment>(() =>
             //new
@@ -85,7 +111,20 @@ namespace Geex.Common.Testing
             options.Services.Replace(ServiceDescriptor.Singleton(new GeexCoreModuleOptions()
             {
                 AppName = TestName,
-                ConnectionString = db.Result.ConnectionString
+                ConnectionString = db.Result.ConnectionString,
+                Redis = new RedisConfiguration()
+                {
+                    Database = 0,
+                    ServiceName = TestName,
+                    Hosts = new[]
+                    {
+                        new RedisHost()
+                        {
+                            Host = "localhost",
+                            Port = redis.Result.Port
+                        }
+                    }
+                }
             }));
         }
 

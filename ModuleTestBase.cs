@@ -64,15 +64,7 @@ namespace Geex.Common.Testing
         protected virtual async Task WithUow(Func<Task> action)
         {
             var uow = GetRequiredService<IUnitOfWork>();
-            try
-            {
-                await action.Invoke();
-            }
-            catch (Exception e)
-            {
-                this.Dispose();
-                throw;
-            }
+            await action.Invoke();
             await uow.CommitAsync();
         }
 

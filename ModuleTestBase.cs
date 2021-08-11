@@ -38,13 +38,7 @@ namespace Geex.Common.Testing
     public abstract class ModuleTestBase<TStartupModule> : AbpIntegratedTest<TStartupModule>
         where TStartupModule : IAbpModule
     {
-        protected static Task<MongoDbRunner> db;
-        protected static Task<RedisRunner> redis;
-        static ModuleTestBase()
-        {
-            db = Task.Run(() => MongoDbRunner.Start(singleNodeReplSet: true, singleNodeReplSetWaitTimeout: 5));
-            redis = RedisRunner.StartAsync(10000);
-        }
+        public static TestEnvironment TestEnvironment { get; } = new TestEnvironment();
         public string TestName = typeof(TStartupModule).Name + "Testing";
         public static IFixture Fixture { get; protected set; } = new Fixture();
 
@@ -77,8 +71,8 @@ namespace Geex.Common.Testing
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public override void Dispose()
         {
-            redis.Result?.Dispose();
-            db.Result?.Dispose();
+            TestEnvironment.Db.Result?.Dispose();
+            TestEnvironment.Redis.Result?.Dispose();
             this.Application?.Shutdown();
             this.TestServiceScope?.Dispose();
             this.Application?.Dispose();
@@ -103,7 +97,7 @@ namespace Geex.Common.Testing
             options.Services.Replace(ServiceDescriptor.Singleton(new GeexCoreModuleOptions()
             {
                 AppName = TestName,
-                ConnectionString = db.Result.ConnectionString,
+                ConnectionString = TestEnvironment.Db.Result.ConnectionString,
                 Redis = new RedisConfiguration()
                 {
                     Database = 0,
@@ -113,7 +107,7 @@ namespace Geex.Common.Testing
                         new RedisHost()
                         {
                             Host = "localhost",
-                            Port = redis.Result.Port
+                            Port = TestEnvironment.Redis.Result.Port
                         }
                     }
                 }

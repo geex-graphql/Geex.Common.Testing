@@ -71,8 +71,7 @@ namespace Geex.Common.Testing
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public override void Dispose()
         {
-            TestEnvironment.Db.Result?.Dispose();
-            TestEnvironment.Redis.Result?.Dispose();
+            TestEnvironment.Dispose();
             this.Application?.Shutdown();
             this.TestServiceScope?.Dispose();
             this.Application?.Dispose();

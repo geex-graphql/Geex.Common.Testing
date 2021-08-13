@@ -38,7 +38,6 @@ namespace Geex.Common.Testing
     public abstract class ModuleTestBase<TStartupModule> : AbpIntegratedTest<TStartupModule>
         where TStartupModule : IAbpModule
     {
-        public static TestEnvironment TestEnvironment { get; } = new TestEnvironment();
         public string TestName = typeof(TStartupModule).Name + "Testing";
         public static IFixture Fixture { get; protected set; } = new Fixture();
 
@@ -68,15 +67,6 @@ namespace Geex.Common.Testing
             DB.MigrateTargetAsync(this.GetType().Assembly.ExportedTypes.Where(x => x.IsAssignableTo<IMigration>()).ToArray()).Wait();
         }
 
-        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
-        public override void Dispose()
-        {
-            TestEnvironment.Dispose();
-            this.Application?.Shutdown();
-            this.TestServiceScope?.Dispose();
-            this.Application?.Dispose();
-        }
-
         protected override void SetAbpApplicationCreationOptions(AbpApplicationCreationOptions options)
         {
             Fixture.Register<string>(() => ObjectId.GenerateNewId().ToString());
@@ -96,7 +86,7 @@ namespace Geex.Common.Testing
             options.Services.Replace(ServiceDescriptor.Singleton(new GeexCoreModuleOptions()
             {
                 AppName = TestName,
-                ConnectionString = TestEnvironment.Db.Result.ConnectionString,
+                ConnectionString = "mongodb://localhost:27017/",
                 Redis = new RedisConfiguration()
                 {
                     Database = 0,
@@ -106,7 +96,7 @@ namespace Geex.Common.Testing
                         new RedisHost()
                         {
                             Host = "localhost",
-                            Port = TestEnvironment.Redis.Result.Port
+                            Port = 6379
                         }
                     }
                 }

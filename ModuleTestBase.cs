@@ -39,7 +39,6 @@ namespace Geex.Common.Testing
         where TStartupModule : IAbpModule
     {
         public string TestName = typeof(TStartupModule).Name + "Testing";
-        public static IFixture Fixture { get; protected set; } = new Fixture();
 
         protected ModuleTestBase()
         {
@@ -69,20 +68,7 @@ namespace Geex.Common.Testing
 
         protected override void SetAbpApplicationCreationOptions(AbpApplicationCreationOptions options)
         {
-            Fixture.Register<string>(() => ObjectId.GenerateNewId().ToString());
-            Fixture.Customize(new AutoMoqCustomization()
-            {
-                ConfigureMembers = true,
-                GenerateDelegates = true
-            });
             options.UseAutofac();
-            //        Fixture.Register<IWebHostEnvironment>(() =>
-            //new
-            //{
-            //    ApplicationName = TestName,
-            //    EnvironmentName = "Testing"
-            //}.ActLike<IWebHostEnvironment>());
-            //        options.Services.AddSingleton<IWebHostEnvironment>(Fixture.Create<IWebHostEnvironment>());
             options.Services.Replace(ServiceDescriptor.Singleton(new GeexCoreModuleOptions()
             {
                 AppName = TestName,

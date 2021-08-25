@@ -20,6 +20,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Mongo2Go;
 
 using MongoDB.Bson;
+using MongoDB.Driver;
 using MongoDB.Entities;
 
 using Moq;
@@ -42,6 +43,11 @@ namespace Geex.Common.Testing
 
         protected ModuleTestBase()
         {
+            DB.DefaultDb.ListCollectionNames().ForEachAsync(x =>
+             {
+                 DB.DefaultDb.DropCollection(x);
+             }).Wait();
+            DB.MigrateTargetAsync(this.GetType().Assembly.ExportedTypes.Where(x => x.IsAssignableTo<IMigration>()).ToArray()).Wait();
         }
 
         protected virtual async Task WithUow(Action action)
@@ -58,12 +64,6 @@ namespace Geex.Common.Testing
             var uow = GetRequiredService<IUnitOfWork>();
             await action.Invoke();
             await uow.CommitAsync();
-        }
-
-        protected override void AfterAddApplication(IServiceCollection services)
-        {
-            base.AfterAddApplication(services);
-            DB.MigrateTargetAsync(this.GetType().Assembly.ExportedTypes.Where(x => x.IsAssignableTo<IMigration>()).ToArray()).Wait();
         }
 
         protected override void SetAbpApplicationCreationOptions(AbpApplicationCreationOptions options)

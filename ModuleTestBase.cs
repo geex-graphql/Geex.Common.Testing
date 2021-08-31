@@ -45,7 +45,10 @@ namespace Geex.Common.Testing
         {
             DB.DefaultDb.ListCollectionNames().ForEachAsync(x =>
              {
-                 DB.DefaultDb.DropCollection(x);
+                 if (x != "system.profile")
+                 {
+                     DB.DefaultDb.DropCollection(x);
+                 }
              }).Wait();
             DB.MigrateTargetAsync(this.GetType().Assembly.ExportedTypes.Where(x => x.IsAssignableTo<IMigration>()).ToArray()).Wait();
         }

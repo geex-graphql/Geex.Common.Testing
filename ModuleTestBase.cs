@@ -43,13 +43,7 @@ namespace Geex.Common.Testing
 
         protected ModuleTestBase()
         {
-            DB.DefaultDb.ListCollectionNames().ForEachAsync(x =>
-             {
-                 if (x != "system.profile")
-                 {
-                     DB.DefaultDb.DropCollection(x);
-                 }
-             }).Wait();
+            DB.Flush().Wait();
             DB.MigrateTargetAsync(this.GetType().Assembly.ExportedTypes.Where(x => x.IsAssignableTo<IMigration>()).ToArray()).Wait();
         }
 

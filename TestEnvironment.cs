@@ -15,28 +15,36 @@ namespace Geex.Common.Testing
 {
     public class TestEnvironment : IDisposable
     {
+        public static string startProgram = "mongoredis";
         public Task<MongoDbRunner> Db;
         public Task<RedisRunner> Redis;
         public TestEnvironment(CancellationToken? token = default)
         {
-            Db = Task.Run(() => MongoDbRunner.StartForDebugging(singleNodeReplSet: true), token.GetValueOrDefault());
-            this.Db.ContinueWith(_ =>
-                {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("Mongodb启动完成, 连接字符串 " + _.Result.ConnectionString);
-                    Console.ResetColor();
-                }, TaskContinuationOptions.NotOnFaulted)
-                .ContinueWith(_ => Interlocked.Or(ref this.State, 0b01), TaskContinuationOptions.NotOnFaulted)
-                .ContinueWith(_ => CheckFinish(), TaskContinuationOptions.NotOnFaulted);
-            Redis = Task.Run(RedisRunner.StartForDebugging, token.GetValueOrDefault());
-            Redis.ContinueWith(_ =>
-                {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("Redis(Memurai)启动完成, 端口 " + _.Result.Port);
-                    Console.ResetColor();
-                }, TaskContinuationOptions.NotOnFaulted)
-                .ContinueWith(_ => Interlocked.Or(ref this.State, 0b10), TaskContinuationOptions.NotOnFaulted)
-                .ContinueWith(_ => CheckFinish(), TaskContinuationOptions.NotOnFaulted);
+            if (startProgram.Contains("mongo"))
+            {
+                Db = Task.Run(() => MongoDbRunner.StartForDebugging(singleNodeReplSet: true), token.GetValueOrDefault());
+                this.Db.ContinueWith(_ =>
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine("Mongodb启动完成, 连接字符串 " + _.Result.ConnectionString);
+                        Console.ResetColor();
+                    }, TaskContinuationOptions.NotOnFaulted)
+                    .ContinueWith(_ => Interlocked.Or(ref this.State, 0b01), TaskContinuationOptions.NotOnFaulted)
+                    .ContinueWith(_ => CheckFinish(), TaskContinuationOptions.NotOnFaulted);
+
+            }
+            if (startProgram.Contains("redis"))
+            {
+                Redis = Task.Run(RedisRunner.StartForDebugging, token.GetValueOrDefault());
+                Redis.ContinueWith(_ =>
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine("Redis(Memurai)启动完成, 端口 " + _.Result.Port);
+                        Console.ResetColor();
+                    }, TaskContinuationOptions.NotOnFaulted)
+                    .ContinueWith(_ => Interlocked.Or(ref this.State, 0b10), TaskContinuationOptions.NotOnFaulted)
+                    .ContinueWith(_ => CheckFinish(), TaskContinuationOptions.NotOnFaulted);
+            }
             token?.Register(this.Dispose, true);
             ;
             void CheckFinish()
@@ -60,27 +68,32 @@ namespace Geex.Common.Testing
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()
         {
-            if (this.Db.Result.Disposed && this.Redis.Result.Disposed)
+            if (startProgram.Contains("mongo"))
             {
-                return;
-            }
+                if (this.Db.Result.Disposed && this.Redis.Result.Disposed)
+                {
+                    return;
+                }
 
-            if (Db?.Result != default)
+                if (Db?.Result != default)
+                {
+                    try
+                    {
+                        var mongoDbProcess = (typeof(MongoDbRunner).GetField("_mongoDbProcess", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(Db?.Result) as MongoDbProcess);
+                        var wrappedProcess = (typeof(MongoDbProcess).GetField("_process", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(mongoDbProcess) as WrappedProcess);
+                        wrappedProcess.DoNotKill = false;
+                        Db?.Result?.Dispose();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                }
+            }
+            if (startProgram.Contains("redis"))
             {
-                try
-                {
-                    var mongoDbProcess = (typeof(MongoDbRunner).GetField("_mongoDbProcess", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(Db?.Result) as MongoDbProcess);
-                    var wrappedProcess = (typeof(MongoDbProcess).GetField("_process", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(mongoDbProcess) as WrappedProcess);
-                    wrappedProcess.DoNotKill = false;
-                    Db?.Result?.Dispose();
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
+                Redis?.Result?.Dispose();
             }
-
-            Redis?.Result?.Dispose();
         }
     }
 }

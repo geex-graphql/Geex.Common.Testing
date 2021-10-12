@@ -10,16 +10,45 @@ namespace Geex.Common.Testing
     {
         public static async Task Main(string[] args)
         {
+            // 通过args 来开启MongoDb或者Redis
+            string startProgram = args.Length > 0 ? args[0] : "mongoredis";
+
+            Console.WriteLine("-------------------------------argsStart---------------------------------------");
+            Console.WriteLine(startProgram);
+            Console.WriteLine("-------------------------------argsEnd---------------------------------------");
+
+            TestEnvironment.startProgram = startProgram;
+
             var portWatcher = new PortWatcher();
-            if (!portWatcher.IsPortAvailable(6379) || !portWatcher.IsPortAvailable(27017))
+
+            if (startProgram.Contains("redis"))
             {
-                Console.WriteLine("默认端口6379/27017被占用, 按 Enter 继续启动...");
-                var key = Console.ReadKey();
-                if (key.Key != ConsoleKey.Enter)
+                if (!portWatcher.IsPortAvailable(6379))
                 {
-                    return;
+                    Console.WriteLine("默认端口6379被占用, 按 Enter 继续启动...");
+                    var key = Console.ReadKey();
+                    if (key.Key != ConsoleKey.Enter)
+                    {
+                        return;
+                    }
                 }
             }
+
+
+            if (startProgram.Contains("mongo"))
+            {
+                if (!portWatcher.IsPortAvailable(27017))
+                {
+                    Console.WriteLine("默认端口27017被占用, 按 Enter 继续启动...");
+                    var key = Console.ReadKey();
+                    if (key.Key != ConsoleKey.Enter)
+                    {
+                        return;
+                    }
+                }
+            }
+
+
             Console.WriteLine("正在启动开发依赖环境...");
             var cancel = new CancellationTokenSource();
             var testEnvironment = new TestEnvironment(cancel.Token);

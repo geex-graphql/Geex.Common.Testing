@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +10,7 @@ using AutoFixture;
 using AutoFixture.AutoMoq;
 
 using Geex.Common.Abstraction;
-
+using Geex.Common.Abstractions;
 using ImpromptuInterface;
 
 using Microsoft.AspNetCore.Builder;
@@ -84,6 +85,10 @@ namespace Geex.Common.Testing
                     }
                 }
             }));
+            var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[] { GeexClaim.AdminClaim }));
+            //var a = options.Services.Where((Func<ServiceDescriptor, bool>)(s => s.ServiceType == typeof(ClaimsPrincipal))).ToList();
+            //options.Services.RemoveAll(a);
+            options.Services.TryAdd(ServiceDescriptor.Singleton(claimsPrincipal));
         }
 
     }

@@ -64,6 +64,15 @@ namespace Geex.Common.Testing
             await uow.CommitAsync();
         }
 
+        protected override void AfterAddApplication(IServiceCollection services)
+        {
+             var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[] { GeexClaim.AdminClaim }));
+            //var a = options.Services.Where((Func<ServiceDescriptor, bool>)(s => s.ServiceType == typeof(ClaimsPrincipal))).ToList();
+            //options.Services.RemoveAll(a);
+            services.ReplaceAll(ServiceDescriptor.Singleton(claimsPrincipal));
+            base.AfterAddApplication(services);
+        }
+
         protected override void SetAbpApplicationCreationOptions(AbpApplicationCreationOptions options)
         {
             options.UseAutofac();
@@ -85,10 +94,6 @@ namespace Geex.Common.Testing
                     }
                 }
             }));
-            var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[] { GeexClaim.AdminClaim }));
-            //var a = options.Services.Where((Func<ServiceDescriptor, bool>)(s => s.ServiceType == typeof(ClaimsPrincipal))).ToList();
-            //options.Services.RemoveAll(a);
-            options.Services.TryAdd(ServiceDescriptor.Singleton(claimsPrincipal));
         }
 
     }

@@ -11,14 +11,13 @@ using AutoFixture.AutoMoq;
 
 using Geex.Common.Abstraction;
 using Geex.Common.Abstractions;
+
 using ImpromptuInterface;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-
-using Mongo2Go;
 
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -66,7 +65,7 @@ namespace Geex.Common.Testing
 
         protected override void AfterAddApplication(IServiceCollection services)
         {
-             var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[] { GeexClaim.AdminClaim }));
+            var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[] { GeexClaim.AdminClaim }));
             //var a = options.Services.Where((Func<ServiceDescriptor, bool>)(s => s.ServiceType == typeof(ClaimsPrincipal))).ToList();
             //options.Services.RemoveAll(a);
             services.ReplaceAll(ServiceDescriptor.Singleton(claimsPrincipal));
@@ -76,6 +75,9 @@ namespace Geex.Common.Testing
         protected override void SetAbpApplicationCreationOptions(AbpApplicationCreationOptions options)
         {
             options.UseAutofac();
+            var mockEvn = new Mock<IWebHostEnvironment>();
+            mockEvn.Setup(x => x.EnvironmentName).Returns("UnitTest");
+            options.Services.TryAdd(ServiceDescriptor.Singleton(mockEvn.Object));
             options.Services.Replace(ServiceDescriptor.Singleton(new GeexCoreModuleOptions()
             {
                 AppName = TestName,

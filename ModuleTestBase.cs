@@ -44,7 +44,7 @@ namespace Geex.Common.Testing
         protected ModuleTestBase()
         {
             DB.Flush().Wait();
-            DB.MigrateTargetAsync(this.GetType().Assembly.ExportedTypes.Where(x => x.IsAssignableTo<IMigration>()).ToArray()).Wait();
+            DB.MigrateTargetAsync(this.GetType().Assembly.ExportedTypes.Where(x => x.IsAssignableTo<DbMigration>()).ToArray()).Wait();
         }
 
         protected virtual async Task WithUow(Action action)

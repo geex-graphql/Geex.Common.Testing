@@ -1,9 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <OutputType>Library</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <Version>3.0.43</Version>
+    <PackageOutputPath>\\kuforedev\shared\dev_packages</PackageOutputPath>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,7 +18,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Geex.Common.Abstraction\Geex.Common.Abstraction.csproj" />
-    <ProjectReference Include="..\Redis2Go\src\Redis2Go\Redis2Go.csproj" />
   </ItemGroup>
 
 </Project>

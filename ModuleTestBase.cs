@@ -25,8 +25,6 @@ using MongoDB.Entities;
 
 using Moq;
 
-using Redis2Go;
-
 using StackExchange.Redis.Extensions.Core.Configuration;
 
 using Volo.Abp;
